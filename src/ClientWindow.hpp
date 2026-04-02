@@ -24,6 +24,5 @@ protected:
 
 public:
     ClientWindow(IWriteOnlyQueue<Payload>& writer);
-    QMainWindow* window();
     void submit();
 };

@@ -1,9 +1,3 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <thread>
-#include <chrono>
-
 #include <QApplication>
 
 #include "ThreadSafeQueue.hpp"
@@ -20,7 +14,7 @@ int main(int argc, char *argv[]) {
     ClientWindow clientWindow(queue);
     clientWindow.show();
 
-    ServerWidget serverWidget(clientWindow.window(), queue);
+    ServerWidget serverWidget(&clientWindow, queue);
     serverWidget.show();
 
     return app.exec();

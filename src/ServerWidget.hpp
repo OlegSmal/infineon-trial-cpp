@@ -10,7 +10,7 @@
 #include "ThreadSafeQueue.hpp"
 #include "Payload.hpp"
 
-class ServerWidget: public QMainWindow{
+class ServerWidget: public QMainWindow {
     Q_OBJECT
 
 signals:

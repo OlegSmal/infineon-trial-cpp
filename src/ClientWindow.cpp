@@ -50,10 +50,6 @@ ClientWindow::ClientWindow(IWriteOnlyQueue<Payload>& writer): QMainWindow(), wri
     this->setCentralWidget(centralWidget);
 }
 
-QMainWindow* ClientWindow::window() {
-    return this;
-}
-
 void ClientWindow::submit() {
     QDate date = dateEdit_->date();
     QTime time = timeEdit_->time();
@@ -72,7 +68,6 @@ void ClientWindow::submit() {
     };
     
     writer_.push(payload);
-    
     std::cout << "[Client Window] Payload sent to queue." << std::endl;
 }
 
