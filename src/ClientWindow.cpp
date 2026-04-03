@@ -13,11 +13,21 @@
 
 #include "Payload.hpp"
 #include "ClientWindow.hpp"
+#include "ServerWindow.hpp"
 
-ClientWindow::ClientWindow(IWriteOnlyQueue<Payload>& writer): QMainWindow(), writer_(writer) {
+ClientWindow::ClientWindow(ServerWindow* mainWindow, IWriteOnlyQueue<Payload>& writer): QMainWindow(mainWindow), parent_(mainWindow), writer_(writer) {
     this->setWindowTitle("Client Window");
-    this->resize(500, 400);
-    this->move(100, 200);
+    this->resize(300, 200);
+    this->move(100 + 25 * mainWindow->liveClients_, 200 + 25 * mainWindow->liveClients_);
+
+    // // disable the close button so that queue is shut down gracefully after main window is closed
+    // Qt::WindowFlags flags = this->windowFlags();
+    // flags |= Qt::CustomizeWindowHint; 
+    // flags |= Qt::WindowTitleHint;
+    // flags &= ~Qt::WindowCloseButtonHint;
+    // flags &= ~Qt::WindowMinimizeButtonHint;
+    // flags &= ~Qt::WindowMaximizeButtonHint;
+    // this->setWindowFlags(flags);
 
     QWidget *centralWidget = new QWidget(this);
     QFormLayout *formLayout = new QFormLayout();
@@ -48,6 +58,9 @@ ClientWindow::ClientWindow(IWriteOnlyQueue<Payload>& writer): QMainWindow(), wri
     mainLayout->addStretch(); 
 
     this->setCentralWidget(centralWidget);
+    id_ = mainWindow->liveClients_.load();
+    mainWindow->clients_.insert({id_, this});
+    mainWindow->liveClients_.fetch_add(1);
 }
 
 void ClientWindow::submit() {
@@ -72,8 +85,12 @@ void ClientWindow::submit() {
 }
 
 void ClientWindow::closeEvent(QCloseEvent *event) {
-    std::cout << "[Client Window] Closing communication queue..." << std::endl;
-    writer_.close();
-    std::cout << "[Client Window] Communication queue closed successfully." << std::endl;
+    if (parent_->liveClients_.load() == 1) {
+        std::cout << "[Client Window] Closing communication queue..." << std::endl;
+        writer_.close();
+        std::cout << "[Client Window] Communication queue closed successfully." << std::endl;
+    }
+    parent_->liveClients_.fetch_sub(1);
+    parent_->clients_.erase(id_);
     event->accept();
 }

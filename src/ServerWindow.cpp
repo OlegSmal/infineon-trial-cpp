@@ -2,31 +2,24 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 #include <QFrame>
 #include <QVBoxLayout>
 #include <QLabel>
 
 #include "Payload.hpp"
-#include "ServerWidget.hpp"
+#include "ServerWindow.hpp"
 
-ServerWidget::ServerWidget(QMainWindow* mainWindow, IReadOnlyQueue<Payload>& reader): QMainWindow(mainWindow), reader_(reader) {
-    connect(this, &ServerWidget::payloadReceived, this, &ServerWidget::displayPayload);
+ServerWindow::ServerWindow(IReadOnlyQueue<Payload>& reader): QMainWindow(), reader_(reader) {
+    connect(this, &ServerWindow::payloadReceived, this, &ServerWindow::displayPayload);
 
+    liveClients_ = 0;
 
     this->setWindowTitle("Server Window");
     this->resize(500, 400);
     this->move(650, 200);
     this->setWindowFlags(Qt::Window);
-    
-    // disable the close button so that this widget is shut down gracefully after main window is closed
-    Qt::WindowFlags flags = this->windowFlags();
-    flags |= Qt::CustomizeWindowHint; 
-    flags |= Qt::WindowTitleHint;
-    flags &= ~Qt::WindowCloseButtonHint;
-    flags &= ~Qt::WindowMinimizeButtonHint;
-    flags &= ~Qt::WindowMaximizeButtonHint;
-    this->setWindowFlags(flags);
 
     QWidget *centralWidget = new QWidget(this);
     layout_ = new QVBoxLayout(centralWidget);
@@ -49,7 +42,7 @@ ServerWidget::ServerWidget(QMainWindow* mainWindow, IReadOnlyQueue<Payload>& rea
     });
 }
 
-void ServerWidget::displayPayload(const Payload& payload) {
+void ServerWindow::displayPayload(const Payload& payload) {
     int index = layout_->count() - 1;
 
     QLabel *nameLabel = new QLabel(
@@ -84,8 +77,18 @@ void ServerWidget::displayPayload(const Payload& payload) {
     line->show();
 }
 
-void ServerWidget::closeEvent(QCloseEvent *event) {
+void ServerWindow::closeEvent(QCloseEvent *event) {
     std::cout << "[Server Window] Joining consumer thread..." << std::endl;
+        
+    // move windows that are about to close to a separate vector to prevent breaking itteration
+    std::vector<QMainWindow*> childrenTmp;
+    for (auto const& [id, window] : clients_) {
+        childrenTmp.push_back(window);
+    }
+    for (QMainWindow* window: childrenTmp) {
+        window->close();
+    }
+
     consumer_.join(); 
     std::cout << "[Server Window] Consumer thread gracefully shut down." << std::endl;
     event->accept();

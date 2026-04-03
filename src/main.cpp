@@ -4,18 +4,21 @@
 
 #include "Payload.hpp"
 #include "ClientWindow.hpp"
-#include "ServerWidget.hpp"
+#include "ServerWindow.hpp"
 
 int main(int argc, char *argv[]) {
     qRegisterMetaType<Payload>("Payload");
     QApplication app(argc, argv);
     ThreadSafeQueue<Payload> queue;
 
-    ClientWindow clientWindow(queue);
-    clientWindow.show();
+    ServerWindow serverWindow(queue);
+    serverWindow.show();
 
-    ServerWidget serverWidget(&clientWindow, queue);
-    serverWidget.show();
+    ClientWindow clientWindow1(&serverWindow, queue);
+    clientWindow1.show();
+
+    ClientWindow clientWindow2(&serverWindow, queue);
+    clientWindow2.show();
 
     return app.exec();
 }

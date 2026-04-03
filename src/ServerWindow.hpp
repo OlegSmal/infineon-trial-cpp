@@ -1,6 +1,8 @@
 #pragma once
 
 #include <thread>
+#include <atomic>
+#include <unordered_map>
 
 #include <QMainWindow>
 #include <QWidget>
@@ -10,7 +12,7 @@
 #include "ThreadSafeQueue.hpp"
 #include "Payload.hpp"
 
-class ServerWidget: public QMainWindow {
+class ServerWindow: public QMainWindow {
     Q_OBJECT
 
 signals:
@@ -25,8 +27,13 @@ private:
     std::thread consumer_;
 
 protected:
+    std::atomic<int> liveClients_;
+    std::unordered_map<int, QMainWindow*> clients_;
+    friend class ClientWindow;
+
+protected:
     void closeEvent(QCloseEvent *event) override;
 
 public:
-    ServerWidget(QMainWindow* mainWindow, IReadOnlyQueue<Payload>& reader);
+    ServerWindow(IReadOnlyQueue<Payload>& reader);
 };
